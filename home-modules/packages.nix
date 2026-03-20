@@ -89,6 +89,7 @@ in
       songrec  # Music recognition
       pulseaudio  # Provides pactl and parec for audio recording
       gnome-settings-daemon  # Provides gsettings
+      gsettings-desktop-schemas # added to get light and dark themes to work
       libnotify  # Provides notify-send
       easyeffects
       grim
@@ -116,9 +117,6 @@ in
       gnome-icon-theme  # Additional GNOME icon coverage
       kdePackages.breeze-icons  # KDE Breeze icons (required by Papirus inheritance)
 
-      # Cloudflare-warp
-      cloudflare-warp
-      
       # Python with required packages for wallpaper analysis
       pythonEnv
       eza  # Modern ls replacement
