@@ -89,7 +89,8 @@ in
       "darklyrc".source = "${dotfilesSource}/dots/.config/darklyrc";
       "dolphinrc".source = "${dotfilesSource}/dots/.config/dolphinrc";
       "foot".source = "${dotfilesSource}/dots/.config/foot";
-      "fuzzel".source = "${dotfilesSource}/dots/.config/fuzzel";
+      # fuzzel: symlink fuzzel.ini but NOT fuzzel_theme.ini (matugen writes to it at runtime)
+      "fuzzel/fuzzel.ini".source = "${dotfilesSource}/dots/.config/fuzzel/fuzzel.ini";
       
       # Hyprland Config
       # Use text/readFile to put the file in the HM generation directory
@@ -128,7 +129,8 @@ in
       '';
 
       # Symlink other hyprland files individually
-      "hypr/hyprland/colors.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/colors.conf";
+      # NOTE: hyprland/colors.conf is NOT symlinked here — matugen writes to it at runtime.
+      # It is handled as a mutable copy in the activation script below.
       "hypr/hyprland/execs.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/execs.conf";
       # Patch general.conf to remove obsolete hyprexpo options (enable_gesture, gesture_positive)
       # These were removed from the hyprexpo plugin API and cause "Invalid value false for finger count" error
@@ -151,7 +153,9 @@ in
       "hypr/custom/keybinds.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/keybinds.conf";
       "hypr/custom/rules.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/rules.conf";
       "hypr/custom/scripts".source = "${dotfilesSource}/dots/.config/hypr/custom/scripts";
-      "hypr/hyprlock".source = "${dotfilesSource}/dots/.config/hypr/hyprlock";
+      # hyprlock: symlink scripts but NOT colors.conf (matugen writes to it at runtime)
+      "hypr/hyprlock/check-capslock.sh".source = "${dotfilesSource}/dots/.config/hypr/hyprlock/check-capslock.sh";
+      "hypr/hyprlock/status.sh".source = "${dotfilesSource}/dots/.config/hypr/hyprlock/status.sh";
       "hypr/hypridle.conf".source = "${dotfilesSource}/dots/.config/hypr/hypridle.conf";
       "hypr/hyprlock.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprlock.conf";
       "hypr/monitors.conf".source = "${dotfilesSource}/dots/.config/hypr/monitors.conf";
@@ -223,72 +227,61 @@ in
 
     # Use activation script ONLY for stateful integration
     home.activation.copyIllogicalImpulseConfigs = config.lib.dag.entryAfter ["writeBoundary"] ''
-      # Path to the config directory in the dotfiles source
       configPath="${dotfilesSource}/dots/.config"
       targetPath="$HOME/.config"
 
-      # Create illogical-impulse directory structure if it doesn't exist (Stateful config)
-      $DRY_RUN_CMD mkdir -p "$targetPath/illogical-impulse"
+      # Remove symlink if present, copy from src if absent, ensure writable
+      copy_mutable() {
+        local src="$1" dst="$2"
+        [ -L "$dst" ] && $DRY_RUN_CMD rm "$dst"
+        [ ! -f "$dst" ] && [ -f "$src" ] && $DRY_RUN_CMD cp "$src" "$dst"
+        [ -f "$dst" ] && $DRY_RUN_CMD chmod u+w "$dst"
+      }
 
-      # Copy the default config.json only if it doesn't already exist
-      if [ ! -f "$targetPath/illogical-impulse/config.json" ]; then
-        if [ -f "$configPath/illogical-impulse/config.json" ]; then
-          $DRY_RUN_CMD cp "$configPath/illogical-impulse/config.json" "$targetPath/illogical-impulse/config.json"
-          $DRY_RUN_CMD chmod u+w "$targetPath/illogical-impulse/config.json"
+      # Replace a symlink-dir with a real dir, copying its previous contents
+      delink_dir() {
+        local dir="$1"
+        if [ -L "$dir" ]; then
+          local src; src=$(readlink "$dir")
+          $DRY_RUN_CMD rm "$dir" && $DRY_RUN_CMD mkdir -p "$dir"
+          for f in "$src"/*; do [ -f "$f" ] && $DRY_RUN_CMD cp "$f" "$dir/$(basename "$f")"; done
         fi
-      fi
-      
-      # Handle kdeglobals (Mutable copy)
-      # If it's a symlink (likely from previous HM generation), remove it first
-      if [ -L "$targetPath/kdeglobals" ]; then
-          $DRY_RUN_CMD rm "$targetPath/kdeglobals"
+        $DRY_RUN_CMD mkdir -p "$dir"
+      }
+
+      # illogical-impulse config.json (copy-once, never overwrite user edits)
+      $DRY_RUN_CMD mkdir -p "$targetPath/illogical-impulse"
+      if [ ! -f "$targetPath/illogical-impulse/config.json" ] && [ -f "$configPath/illogical-impulse/config.json" ]; then
+        $DRY_RUN_CMD cp "$configPath/illogical-impulse/config.json" "$targetPath/illogical-impulse/config.json"
+        $DRY_RUN_CMD chmod u+w "$targetPath/illogical-impulse/config.json"
       fi
 
-      # We copy it if it doesn't exist (or was just removed), to allow scripts to modify it
-      if [ ! -f "$targetPath/kdeglobals" ]; then
-         if [ -f "$configPath/kdeglobals" ]; then
-             $DRY_RUN_CMD cp "$configPath/kdeglobals" "$targetPath/kdeglobals"
-             $DRY_RUN_CMD chmod u+w "$targetPath/kdeglobals"
-         fi
-      else
-         # Ensure it's writable even if it exists
-         $DRY_RUN_CMD chmod u+w "$targetPath/kdeglobals"
-      fi
+      # kdeglobals + dolphinrc (mutable copies — modified by apps/scripts at runtime)
+      copy_mutable "$configPath/kdeglobals" "$targetPath/kdeglobals"
 
-      # Handle konsole directory (Mutable directory with managed files)
+      # konsole (mutable directory — force-copy so files remain writable)
       konsoleTarget="$HOME/.local/share/konsole"
-      konsoleSource="${dotfilesSource}/dots/.local/share/konsole"
-
-      # If it is a symlink (from previous HM generation), remove it
-      if [ -L "$konsoleTarget" ]; then
-          $DRY_RUN_CMD rm "$konsoleTarget"
-      fi
-
-      # Ensure directory exists
-      if [ ! -d "$konsoleTarget" ]; then
-          $DRY_RUN_CMD mkdir -p "$konsoleTarget"
-      fi
-
-      # Sync files (copy managed files into the mutable directory and make writable)
-      for file in "$konsoleSource"/*; do
-          filename=$(basename "$file")
-          # Copy (force overwrite) instead of symlink so the file itself is mutable
-          # Use rm first to avoid "same file" errors if it was a hardlink or symlink previously
-          if [ -e "$konsoleTarget/$filename" ]; then
-              $DRY_RUN_CMD rm -f "$konsoleTarget/$filename"
-          fi
-          $DRY_RUN_CMD cp "$file" "$konsoleTarget/$filename"
-          $DRY_RUN_CMD chmod u+w "$konsoleTarget/$filename"
+      [ -L "$konsoleTarget" ] && $DRY_RUN_CMD rm "$konsoleTarget"
+      $DRY_RUN_CMD mkdir -p "$konsoleTarget"
+      for file in "${dotfilesSource}/dots/.local/share/konsole"/*; do
+        filename=$(basename "$file")
+        [ -e "$konsoleTarget/$filename" ] && $DRY_RUN_CMD rm -f "$konsoleTarget/$filename"
+        $DRY_RUN_CMD cp "$file" "$konsoleTarget/$filename"
+        $DRY_RUN_CMD chmod u+w "$konsoleTarget/$filename"
       done
 
-      # Fix Qt icon theme configuration to use OneUI-dark/OneUI-light with Papirus fallback
-      # This is still needed because qt6ct might be generating its config
+      # Matugen-managed files (matugen overwrites these at runtime — keep writable)
+      copy_mutable "$configPath/hypr/hyprland/colors.conf" "$targetPath/hypr/hyprland/colors.conf"
+
+      delink_dir "$targetPath/hypr/hyprlock"
+      copy_mutable "$configPath/hypr/hyprlock/colors.conf" "$targetPath/hypr/hyprlock/colors.conf"
+
+      delink_dir "$targetPath/fuzzel"
+      copy_mutable "$configPath/fuzzel/fuzzel_theme.ini" "$targetPath/fuzzel/fuzzel_theme.ini"
+
+      # Qt icon theme fixup
       for qt_conf in "$targetPath/qt5ct/qt5ct.conf" "$targetPath/qt6ct/qt6ct.conf"; do
-        if [ -f "$qt_conf" ]; then
-          # Replace OneUI with OneUI-dark, OneUI-light stays as-is
-          $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI$/icon_theme=OneUI-dark/' "$qt_conf"
-          $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI-light$/icon_theme=OneUI-light/' "$qt_conf"
-        fi
+        [ -f "$qt_conf" ] && $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI$/icon_theme=OneUI-dark/' "$qt_conf"
       done
     '';
   };
