@@ -109,6 +109,7 @@ in
       # opencv is included in pythonEnv, no need to include it separately
 
       # Themes and icons
+      bibata-cursors
       adw-gtk3
       customPkgs.illogical-impulse-oneui4-icons
       papirus-icon-theme  # Primary icon theme
