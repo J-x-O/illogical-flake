@@ -87,7 +87,7 @@ in
       "chrome-flags.conf".source = "${dotfilesSource}/dots/.config/chrome-flags.conf";
       "code-flags.conf".source = "${dotfilesSource}/dots/.config/code-flags.conf";
       "darklyrc".source = "${dotfilesSource}/dots/.config/darklyrc";
-      "dolphinrc".source = "${dotfilesSource}/dots/.config/dolphinrc";
+      # dolphinrc handled in activation script (needs to be writable)
       "foot".source = "${dotfilesSource}/dots/.config/foot";
       # fuzzel: symlink fuzzel.ini but NOT fuzzel_theme.ini (matugen writes to it at runtime)
       "fuzzel/fuzzel.ini".source = "${dotfilesSource}/dots/.config/fuzzel/fuzzel.ini";
@@ -238,6 +238,15 @@ in
         [ -f "$dst" ] && $DRY_RUN_CMD chmod u+w "$dst"
       }
 
+      # Always overwrite from src (for configs managed by dotfiles but writable at runtime)
+      copy_always() {
+        local src="$1" dst="$2"
+        [ -f "$src" ] || return
+        [ -L "$dst" ] && $DRY_RUN_CMD rm "$dst"
+        $DRY_RUN_CMD cp "$src" "$dst"
+        $DRY_RUN_CMD chmod u+w "$dst"
+      }
+
       # Replace a symlink-dir with a real dir, copying its previous contents
       delink_dir() {
         local dir="$1"
@@ -256,8 +265,10 @@ in
         $DRY_RUN_CMD chmod u+w "$targetPath/illogical-impulse/config.json"
       fi
 
-      # kdeglobals + dolphinrc (mutable copies — modified by apps/scripts at runtime)
+      # kdeglobals (mutable copy — preserve runtime edits)
       copy_mutable "$configPath/kdeglobals" "$targetPath/kdeglobals"
+      # dolphinrc (always sync from dotfiles — Dolphin needs write access at runtime)
+      copy_always "$configPath/dolphinrc" "$targetPath/dolphinrc"
 
       # konsole (mutable directory — force-copy so files remain writable)
       konsoleTarget="$HOME/.local/share/konsole"
