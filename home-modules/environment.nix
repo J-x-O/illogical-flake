@@ -22,5 +22,11 @@ in
 
     # Install qt6ct for Qt theming
     home.packages = [ pkgs.qt6Packages.qt6ct ];
+
+    # Enable gnome-keyring SSH agent
+    services.gnome-keyring = {
+      enable = true;
+      components = [ "ssh" "secrets" ];
+    };
   };
 }

@@ -123,7 +123,6 @@ in
       eza  # Modern ls replacement
 
       # Minimal Qt/KDE packages (only what's needed for functionality)
-      gnome-keyring  # Keyring support
       kdePackages.bluedevil  # Bluetooth management (for kcm_bluetooth)
       kdePackages.plasma-nm  # Network management (for kcm_networkmanagement)
       kdePackages.plasma-workspace # Provides plasma-apply-colorscheme
