@@ -234,7 +234,7 @@ in
       copy_mutable() {
         local src="$1" dst="$2"
         [ -L "$dst" ] && $DRY_RUN_CMD rm "$dst"
-        [ ! -f "$dst" ] && [ -f "$src" ] && $DRY_RUN_CMD cp "$src" "$dst"
+        [ ! -f "$dst" ] && [ -f "$src" ] && { $DRY_RUN_CMD mkdir -p "$(dirname "$dst")"; $DRY_RUN_CMD cp "$src" "$dst"; }
         [ -f "$dst" ] && $DRY_RUN_CMD chmod u+w "$dst"
       }
 
