@@ -15,6 +15,7 @@ in
       ILLOGICAL_IMPULSE_DOTFILES_SOURCE = "${config.home.homeDirectory}/.config";
       ILLOGICAL_IMPULSE_VIRTUAL_ENV = "${config.home.homeDirectory}/.local/state/quickshell/.venv";
       qsConfig = "${config.home.homeDirectory}/.config/quickshell/ii";
+      SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/gcr/ssh";
     };
     
     # Ensure variables are available to systemd services (and Hyprland)
