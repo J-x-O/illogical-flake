@@ -184,7 +184,10 @@ in
         # Replace complex shebangs that patchShebangs can't handle with standard python
         # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
         find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
-        
+
+        # Use install -m 644 instead of cp so destination is writable (Nix store sources are 444)
+        sed -i 's|cp "\$SCRIPT_DIR/terminal/|install -m 644 "$SCRIPT_DIR/terminal/|g' $out/ii/scripts/colors/applycolor.sh
+
         patchShebangs $out
       '';
 
