@@ -73,6 +73,7 @@ in
         name = mkDefault "OneUI-dark";
         package = mkDefault customPkgs.illogical-impulse-oneui4-icons;
       };
+      gtk4.theme = null;
     };
 
     # Set icon theme via dconf for GNOME/GTK apps
