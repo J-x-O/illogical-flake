@@ -141,6 +141,9 @@ in
         (builtins.readFile "${dotfilesSource}/dots/.config/hypr/hyprland/general.conf");
       "hypr/hyprland/keybinds.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/keybinds.conf";
       "hypr/hyprland/rules.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/rules.conf";
+      "hypr/hyprland/variables.conf" = lib.mkIf (builtins.pathExists "${dotfilesSource}/dots/.config/hypr/hyprland/variables.conf") {
+        source = "${dotfilesSource}/dots/.config/hypr/hyprland/variables.conf";
+      };
       "hypr/hyprland/scripts".source = "${dotfilesSource}/dots/.config/hypr/hyprland/scripts";
       "hypr/hyprland/shellOverrides" = lib.mkIf (builtins.pathExists "${dotfilesSource}/dots/.config/hypr/hyprland/shellOverrides") {
         source = "${dotfilesSource}/dots/.config/hypr/hyprland/shellOverrides";
