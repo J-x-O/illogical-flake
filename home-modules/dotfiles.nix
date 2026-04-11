@@ -192,6 +192,10 @@ in
         # Use install -m 644 instead of cp so destination is writable (Nix store sources are 444)
         sed -i 's|cp "\$SCRIPT_DIR/terminal/|install -m 644 "$SCRIPT_DIR/terminal/|g' $out/ii/scripts/colors/applycolor.sh
 
+        # Fix materialyoucolor 3.x API: attribute renamed from primary_paletteKeyColor (2.x) to primaryPaletteKeyColor (3.x)
+        sed -i "s/material_colors\['primary_paletteKeyColor'\]/material_colors['primaryPaletteKeyColor']/g" \
+          $out/ii/scripts/colors/generate_colors_material.py
+
         patchShebangs $out
       '';
 
