@@ -12,6 +12,20 @@ let
   # Custom packages
   customPkgs = import ../pkgs { inherit pkgs; };
   oneUIIconsPath = "${customPkgs.illogical-impulse-oneui4-icons}/share/icons";
+
+  xdgDataDirs = lib.concatStringsSep ":" [
+    "${config.home.homeDirectory}/.nix-profile/share"
+    "${config.home.homeDirectory}/.local/share"
+    "/etc/profiles/per-user/${config.home.username}/share"
+    "/run/current-system/sw/share"
+    "${config.home.homeDirectory}/.local/share/flatpak/exports/share"
+    "/var/lib/flatpak/exports/share"
+    "/usr/local/share"
+    "/usr/share"
+    "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}"
+    "${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}"
+    "$XDG_DATA_DIRS"
+  ];
 in
 {
   options.programs.illogical-impulse.dotfiles = {
@@ -111,7 +125,7 @@ in
       "hypr/hyprland/env.conf".text = ''
         # --- Injected Environment by Illogical Impulse Flake ---
         env = PATH,${config.home.homeDirectory}/.nix-profile/bin:/etc/profiles/per-user/${config.home.username}/bin:$PATH
-        env = XDG_DATA_DIRS,${config.home.homeDirectory}/.nix-profile/share:${config.home.homeDirectory}/.local/share:/etc/profiles/per-user/${config.home.username}/share:/run/current-system/sw/share:${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share:${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:$XDG_DATA_DIRS
+        env = XDG_DATA_DIRS,${xdgDataDirs}
         env = QT_PLUGIN_PATH,${config.home.homeDirectory}/.nix-profile/lib/qt-6/plugins:${config.home.homeDirectory}/.nix-profile/lib/plugins
         env = QML2_IMPORT_PATH,${config.home.homeDirectory}/.nix-profile/lib/qt-6/qml
         env = QT_WAYLAND_DISABLE_WINDOWDECORATION,1
