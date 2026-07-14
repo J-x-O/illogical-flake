@@ -93,6 +93,23 @@ in
       # Directories to exclude from copying (QuickShell manages these dynamically)
       excludedDirs=("illogical-impulse")
 
+      # Atomically replace $dst with a copy of $src: build the replacement as a
+      # sibling temp path (same filesystem, so `mv -T` is a single atomic rename),
+      # then swap it in. $dst is only ever missing for the instant between the
+      # rm and the mv, not for the duration of the copy. This avoids a window
+      # where e.g. ~/.config/hypr doesn't exist while Hyprland is still running,
+      # which can make it reload into a "no binds" emergency state mid-switch.
+      atomicReplace() {
+        local src="$1" dst="$2"
+        local tmp="$dst.new-$$"
+
+        $DRY_RUN_CMD rm -rf "$tmp"
+        $DRY_RUN_CMD cp -r "$src" "$tmp"
+        $DRY_RUN_CMD chmod -R u+w "$tmp"
+        $DRY_RUN_CMD rm -rf "$dst"
+        $DRY_RUN_CMD mv -T "$tmp" "$dst"
+      }
+
       # Copy all items from dotfiles .config to user .config
       $DRY_RUN_CMD mkdir -p "$targetPath"
 
@@ -125,16 +142,7 @@ in
 
         targetItem="$targetPath/$itemName"
 
-        # Remove existing file/directory if it exists
-        if [ -e "$targetItem" ] || [ -L "$targetItem" ]; then
-          $DRY_RUN_CMD rm -rf "$targetItem"
-        fi
-
-        # Copy the item (works for both files and directories)
-        $DRY_RUN_CMD cp -r "$item" "$targetItem"
-
-        # Make files writable
-        $DRY_RUN_CMD chmod -R u+w "$targetItem"
+        atomicReplace "$item" "$targetItem"
       done
 
       echo "Copied Illogical Impulse configuration files to ~/.config"
@@ -174,16 +182,7 @@ in
             itemName=$(basename "$item")
             targetItem="$targetLocalShare/$itemName"
 
-            # Remove existing file/directory if it exists
-            if [ -e "$targetItem" ] || [ -L "$targetItem" ]; then
-              $DRY_RUN_CMD rm -rf "$targetItem"
-            fi
-
-            # Copy the item
-            $DRY_RUN_CMD cp -r "$item" "$targetItem"
-
-            # Make files writable
-            $DRY_RUN_CMD chmod -R u+w "$targetItem"
+            atomicReplace "$item" "$targetItem"
           fi
         done
 
@@ -206,16 +205,10 @@ in
         fi
         fallback_theme="$papirus_theme,Adwaita"
 
-        # Remove existing OneUI theme directory
-        if [ -e "$targetLocalShare/icons/$theme" ] || [ -L "$targetLocalShare/icons/$theme" ]; then
-          $DRY_RUN_CMD rm -rf "$targetLocalShare/icons/$theme"
-        fi
-
         # Copy OneUI theme from nix store
         oneui_source="${oneUIIconsPath}/$theme"
         if [ -d "$oneui_source" ]; then
-          $DRY_RUN_CMD cp -r "$oneui_source" "$targetLocalShare/icons/$theme"
-          $DRY_RUN_CMD chmod -R u+w "$targetLocalShare/icons/$theme"
+          atomicReplace "$oneui_source" "$targetLocalShare/icons/$theme"
 
           # Update the Inherits line to include Papirus and Adwaita fallbacks
           if [ -f "$targetLocalShare/icons/$theme/index.theme" ]; then
@@ -233,13 +226,8 @@ in
         papirus_source="${pkgs.papirus-icon-theme}/share/icons/$papirus_theme"
 
         # Always copy from source (removing symlink or directory if exists)
-        if [ -e "$papirus_local" ] || [ -L "$papirus_local" ]; then
-          $DRY_RUN_CMD rm -rf "$papirus_local"
-        fi
-
         if [ -d "$papirus_source" ]; then
-          $DRY_RUN_CMD cp -r "$papirus_source" "$papirus_local"
-          $DRY_RUN_CMD chmod -R u+w "$papirus_local"
+          atomicReplace "$papirus_source" "$papirus_local"
 
           # Replace breeze inheritance with Adwaita
           if [ -f "$papirus_local/index.theme" ]; then
@@ -289,8 +277,8 @@ hl.env("XDG_DATA_DIRS",
   ":/var/lib/flatpak/exports/share" ..
   ":/usr/local/share:/usr/share")
 
--- Use qt6ct (available in Nix profile) instead of upstream "kde"
-hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
+-- Match upstream default: kde platform theme integration (kdeglobals / Material You via kde-material-you-colors)
+hl.env("QT_QPA_PLATFORMTHEME", "kde")
 LUAEOF
         chmod u+w "$hyprCustomEnv"
         echo "Generated hyprland custom/env.lua with NixOS paths"
