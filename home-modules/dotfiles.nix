@@ -279,6 +279,12 @@ hl.env("XDG_DATA_DIRS",
 
 -- Match upstream default: kde platform theme integration (kdeglobals / Material You via kde-material-you-colors)
 hl.env("QT_QPA_PLATFORMTHEME", "kde")
+
+-- Ensure Qt can actually find the "kde" platform theme plugin (KDEPlasmaPlatformTheme6.so)
+hl.env("QT_PLUGIN_PATH",
+  "${pkgs.kdePackages.plasma-integration}/lib/qt-6/plugins" ..
+  ":${pkgs.kdePackages.kio}/lib/qt-6/plugins" ..
+  ":" .. (os.getenv("QT_PLUGIN_PATH") or ""))
 LUAEOF
         chmod u+w "$hyprCustomEnv"
         echo "Generated hyprland custom/env.lua with NixOS paths"
