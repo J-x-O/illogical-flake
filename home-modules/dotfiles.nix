@@ -12,6 +12,7 @@ let
   # Custom packages
   customPkgs = import ../pkgs { inherit pkgs; };
   oneUIIconsPath = "${customPkgs.illogical-impulse-oneui4-icons}/share/icons";
+
 in
 {
   options.programs.illogical-impulse.dotfiles = {
@@ -275,7 +276,10 @@ hl.env("XDG_DATA_DIRS",
   ":/run/current-system/sw/share" ..
   ":" .. home_dir .. "/.local/share/flatpak/exports/share" ..
   ":/var/lib/flatpak/exports/share" ..
-  ":/usr/local/share:/usr/share")
+  ":/usr/local/share" ..
+  ":/usr/share" ..
+  ":${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}" ..
+  ":${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}")
 
 -- Match upstream default: kde platform theme integration (kdeglobals / Material You via kde-material-you-colors)
 hl.env("QT_QPA_PLATFORMTHEME", "kde")
