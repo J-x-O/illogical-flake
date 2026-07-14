@@ -281,7 +281,10 @@ hl.env("XDG_DATA_DIRS",
   ":/run/current-system/sw/share" ..
   ":" .. home_dir .. "/.local/share/flatpak/exports/share" ..
   ":/var/lib/flatpak/exports/share" ..
-  ":/usr/local/share:/usr/share")
+  ":/usr/local/share" ..
+  ":/usr/share" ..
+  ":${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}" ..
+  ":${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}")
 
 -- Use qt6ct (available in Nix profile) instead of upstream "kde"
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
