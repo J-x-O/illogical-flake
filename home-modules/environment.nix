@@ -13,9 +13,16 @@ in
       QT_QPA_PLATFORMTHEME = "qt6ct";  # Use qt6ct for Qt6 theming
       QT_STYLE_OVERRIDE = "";
       ILLOGICAL_IMPULSE_DOTFILES_SOURCE = "${config.home.homeDirectory}/.config";
+      SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/gcr/ssh";
     };
 
     # Install qt6ct for Qt theming
     home.packages = [ pkgs.qt6Packages.qt6ct ];
+
+    # Enable gnome-keyring SSH agent
+    services.gnome-keyring = {
+      enable = true;
+      components = [ "ssh" "secrets" ];
+    };
   };
 }
