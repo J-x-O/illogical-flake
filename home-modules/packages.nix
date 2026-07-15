@@ -63,7 +63,6 @@ in
       jq
 
       # GUI applications
-      foot
       fuzzel
       matugen
       mpv

@@ -139,6 +139,15 @@ in
 
       echo "Copied Illogical Impulse configuration files to ~/.config"
 
+      # Fix materialyoucolor 3.x API: attribute renamed from primary_paletteKeyColor (2.x) to primaryPaletteKeyColor (3.x)
+      # Without this, generate_colors_material.py crashes with a KeyError, leaving material_colors.scss
+      # empty and breaking all downstream color theming (e.g. kitty-theme.conf keeps its raw placeholders).
+      colorScript="$targetPath/quickshell/ii/scripts/colors/generate_colors_material.py"
+      if [ -f "$colorScript" ]; then
+        $DRY_RUN_CMD sed -i "s/material_colors\['primary_paletteKeyColor'\]/material_colors['primaryPaletteKeyColor']/g" "$colorScript"
+        echo "Patched generate_colors_material.py for materialyoucolor 3.x API"
+      fi
+
       # Fix Qt icon theme configuration to use OneUI-dark/OneUI-light with Papirus fallback
       for qt_conf in "$targetPath/qt5ct/qt5ct.conf" "$targetPath/qt6ct/qt6ct.conf"; do
         if [ -f "$qt_conf" ]; then
