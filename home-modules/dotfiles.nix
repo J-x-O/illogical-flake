@@ -295,8 +295,10 @@ hl.env("XDG_DATA_DIRS",
   ":${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}" ..
   ":${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}")
 
--- Use qt6ct (available in Nix profile) instead of upstream "kde"
-hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
+-- Use the "kde" platform theme (via kdePackages.plasma-integration) so Qt/KDE Frameworks
+-- apps (Dolphin, etc.) read live color updates from kdeglobals, as written by
+-- kde-material-you-colors + plasma-apply-colorscheme.
+hl.env("QT_QPA_PLATFORMTHEME", "kde")
 LUAEOF
         chmod u+w "$hyprCustomEnv"
         echo "Generated hyprland custom/env.lua with NixOS paths"

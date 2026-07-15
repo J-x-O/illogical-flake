@@ -126,6 +126,7 @@ in
       kdePackages.kdialog  # Dialog prompts
       kdePackages.kirigami
       kdePackages.plasma-workspace  # Provides plasma-apply-colorscheme, used by kde-material-you-colors
+      kdePackages.plasma-integration  # Provides the "kde" Qt platform theme plugin (reads kdeglobals)
 
       # Additional Qt support
       libsForQt5.qtgraphicaleffects
