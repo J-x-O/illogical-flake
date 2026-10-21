@@ -148,6 +148,27 @@ in
         echo "Patched generate_colors_material.py for materialyoucolor 3.x API"
       fi
 
+      # App launcher searches only Name by default, so a desktop entry's Keywords and
+      # GenericName are ignored when matching. Index them too, so typing e.g. "sheets",
+      # "calc" or "excel" surfaces apps like GridCraft (whose .desktop aliases live in
+      # Keywords/GenericName) — without needing per-app name substitutions.
+      appSearchScript="$targetPath/quickshell/ii/services/AppSearch.qml"
+      if [ -f "$appSearchScript" ]; then
+        $DRY_RUN_CMD python3 - "$appSearchScript" << 'PYEOF'
+import sys
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as f:
+    src = f.read()
+old = 'name: Fuzzy.prepare(`''${a.name} `),'
+new = 'name: Fuzzy.prepare(`''${a.name} ''${a.genericName ?? ""} ''${a.keywords.join(" ") ?? ""} `),'
+if old in src and new not in src:
+    src = src.replace(old, new, 1)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(src)
+    print("Patched AppSearch.qml to index Keywords and GenericName")
+PYEOF
+      fi
+
       # Fix Qt icon theme configuration to use OneUI-dark/OneUI-light with Papirus fallback
       for qt_conf in "$targetPath/qt5ct/qt5ct.conf" "$targetPath/qt6ct/qt6ct.conf"; do
         if [ -f "$qt_conf" ]; then
