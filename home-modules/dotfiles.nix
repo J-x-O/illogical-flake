@@ -55,6 +55,13 @@ if old in src and new not in src:
 PYEOF
     fi
 
+    # Hyprland >= 0.57 range-checks decoration.shadow.render_power (1-4) and rejects upstream's 10
+    # with a config error; older versions silently clamped it to 4, so 4 keeps the same look.
+    generalLua="$out/hypr/hyprland/general.lua"
+    if [ -f "$generalLua" ]; then
+      sed -i 's/render_power = 10,/render_power = 4,/' "$generalLua"
+    fi
+
     # Fix Qt icon theme configuration to use OneUI-dark/OneUI-light with Papirus fallback
     for qt_conf in "$out/qt5ct/qt5ct.conf" "$out/qt6ct/qt6ct.conf"; do
       if [ -f "$qt_conf" ]; then
