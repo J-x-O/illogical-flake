@@ -19,7 +19,18 @@ let
     (builtins.filter (lib.hasPrefix ".config/")
       (map (f: f.target) (builtins.filter (f: f.enable) (builtins.attrValues config.home.file))));
 
-  generalIsHmManaged = builtins.elem "hypr/custom/general.lua" hmConfigTargets;
+  # Paths under ~/.config that are generated from the wallpaper colors (matugen templates and
+  # kde-material-you-colors). Upstream ships placeholder copies; see the activation sync below.
+  generatedConfigFiles = [
+    "kdeglobals"
+    "hypr/hyprland/colors.lua"
+    "hypr/hyprlock/colors.conf"
+    "fuzzel/fuzzel_theme.ini"
+    "gtk-3.0/gtk.css"
+    "gtk-4.0/gtk.css"
+  ];
+
+  generalIsHmManaged =builtins.elem "hypr/custom/general.lua" hmConfigTargets;
 
   # Upstream .config with all NixOS patches applied at build time. Activation then only syncs
   # finished files; patching in place made Hyprland/QuickShell hot-reload half-written configs.
@@ -206,11 +217,23 @@ in
         fi
       fi
 
+      # Files upstream ships as placeholders but that matugen / kde-material-you-colors regenerate
+      # from the wallpaper. Only seed them when missing: syncing them would reset every app to
+      # upstream's default palette on each activation (including the boot-time home-manager run),
+      # until the next wallpaper/color change regenerates them.
+      generatedExcludes=()
+      for f in ${lib.concatMapStringsSep " " lib.escapeShellArg generatedConfigFiles}; do
+        if [ -e "$targetPath/$f" ]; then
+          generatedExcludes+=("--exclude=/$f")
+        fi
+      done
+
       # Sync in place instead of rm -rf + cp: files are swapped atomically and only when changed,
       # so Hyprland/QuickShell never see a missing or empty config mid-switch.
       # illogical-impulse/ is managed by QuickShell; home-manager-linked files are left to linkGeneration.
       $DRY_RUN_CMD ${pkgs.rsync}/bin/rsync -rlc --chmod=u+w \
         --exclude=/illogical-impulse \
+        "''${generatedExcludes[@]}" \
         ${lib.concatMapStringsSep " " (t: lib.escapeShellArg "--exclude=/${t}") hmConfigTargets} \
         "$configPath/" "$targetPath/"
 
