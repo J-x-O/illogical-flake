@@ -6,23 +6,9 @@ let
   cfg = config.programs.illogical-impulse;
   pythonEnv = cfg.internal.pythonEnv;
 
-  # Override quickshell to enable Polkit
-  # We must target the unwrapped package to ensure cmakeFlags take effect during build
-  baseQuickshell = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  unwrappedQuickshell = if (builtins.hasAttr "unwrapped" baseQuickshell) then baseQuickshell.unwrapped else baseQuickshell;
-
-  quickshellPackage = unwrappedQuickshell.overrideAttrs (old: {
-    cmakeFlags = (old.cmakeFlags or []) ++ [ "-DSERVICE_POLKIT=ON" ];
-    nativeBuildInputs = (old.nativeBuildInputs or []) ++ [
-      pkgs.pkg-config
-      pkgs.kdePackages.extra-cmake-modules
-    ];
-    buildInputs = (old.buildInputs or []) ++ [ 
-      pkgs.polkit 
-      pkgs.kdePackages.polkit-qt-1
-      pkgs.glib
-    ];
-  });
+  # nixpkgs' quickshell (prebuilt in cache.nixos.org) already builds with polkit and pam, so no
+  # source build of the git input is needed. Its wrapper only adds qt env, which we set below.
+  quickshellPackage = pkgs.quickshell.unwrapped or pkgs.quickshell;
 in
 {
   config = lib.mkIf cfg.enable {

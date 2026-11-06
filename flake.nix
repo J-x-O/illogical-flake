@@ -5,11 +5,6 @@
     # These will be overridden by the user's flake
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    quickshell = {
-      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nur = {
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -22,9 +17,9 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, quickshell, nur, dotfiles, ... }:
+  outputs = inputs@{ self, nixpkgs, nur, dotfiles, ... }:
     let
-      flakeInputs = { inherit quickshell nur dotfiles; };
+      flakeInputs = { inherit nur dotfiles; };
     in {
       # Home-manager module for user configuration
       homeManagerModules.default = { config, lib, pkgs, ... }: (import ./home-module.nix) {
